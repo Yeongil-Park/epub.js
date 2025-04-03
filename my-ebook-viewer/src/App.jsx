@@ -18,6 +18,8 @@ function App() {
   ];
 
   useEffect(() => {
+    console.log("selectedBookPath 변경:", selectedBookPath); // 추가
+
     if (!selectedBookPath) {
       return;
     }
@@ -33,9 +35,12 @@ function App() {
           newRendition = await newBook.renderTo(viewerRef.current, {
             width: "100%",
             height: "100%",
+            spread: "always", // 추가
           });
           setRendition(newRendition);
           await newRendition.display();
+
+          console.log("EPUB 렌더링 성공:", newRendition); // 추가
 
           updatePageInfo(newRendition);
           applyTheme(newRendition, isDarkMode);
