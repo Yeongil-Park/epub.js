@@ -99,16 +99,43 @@ h1 {
 }
 
 .page-info {
-  min-width: 120px;
-  padding: 8px 12px;
+  min-width: 180px;
+  padding: 10px 15px;
   background-color: #fff;
   border-radius: 4px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   text-align: center;
-  font-weight: bold;
   color: #333;
   margin: 0 10px;
   border: 1px solid #ddd;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.page-numbers {
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background-color: #eee;
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 5px 0;
+}
+
+.progress-fill {
+  height: 100%;
+  background-color: #4a90e2;
+  transition: width 0.3s ease;
+}
+
+.progress-percent {
+  font-size: 0.85rem;
+  color: #666;
 }
 
 @media (max-width: 768px) {
