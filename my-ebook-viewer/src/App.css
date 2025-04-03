@@ -99,9 +99,16 @@ h1 {
 }
 
 .page-info {
-  margin: 0 15px;
-  color: #555;
+  min-width: 120px;
+  padding: 8px 12px;
+  background-color: #fff;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  text-align: center;
   font-weight: bold;
+  color: #333;
+  margin: 0 10px;
+  border: 1px solid #ddd;
 }
 
 @media (max-width: 768px) {
@@ -116,5 +123,10 @@ h1 {
   .controls button {
     width: 100%;
     margin-bottom: 8px;
+  }
+
+  .page-info {
+    width: 100%;
+    margin: 10px 0;
   }
 }

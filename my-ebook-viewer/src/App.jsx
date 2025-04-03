@@ -9,8 +9,8 @@ function App() {
   const viewerRef = useRef(null);
   const [fontSize, setFontSize] = useState(100);
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [currentPage, setCurrentPage] = useState(null);
-  const [totalPages, setTotalPages] = useState(null);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
 
   const availableBooks = [
     { title: "로미오와 줄리엣", path: "/books/romeo.epub" },
@@ -18,7 +18,7 @@ function App() {
   ];
 
   useEffect(() => {
-    console.log("selectedBookPath 변경:", selectedBookPath); // 추가
+    console.log("selectedBookPath 변경:", selectedBookPath);
 
     if (!selectedBookPath) {
       return;
@@ -31,21 +31,32 @@ function App() {
         newBook = ePub(selectedBookPath);
         setBook(newBook);
 
+        // 전체 페이지 생성 (중요: 책을 로드하기 전에 페이지 정보 초기화)
+        await newBook.ready;
+        await newBook.locations.generate(1024); // 더 정확한 페이지 계산을 위해 세그먼트 수 증가
+
         if (viewerRef.current) {
-          newRendition = await newBook.renderTo(viewerRef.current, {
+          newRendition = newBook.renderTo(viewerRef.current, {
             width: "100%",
             height: "100%",
-            spread: "always", // 추가
+            spread: "always",
           });
           setRendition(newRendition);
-          await newRendition.display();
 
-          console.log("EPUB 렌더링 성공:", newRendition); // 추가
-
-          updatePageInfo(newRendition);
+          // 테마 적용 및 초기 페이지 설정
           applyTheme(newRendition, isDarkMode);
+          newRendition.display();
 
-          newRendition.on("rendered", () => updatePageInfo(newRendition));
+          // 페이지 정보 업데이트 이벤트 연결
+          newRendition.on("relocated", (location) => {
+            console.log("페이지 이동:", location);
+            updatePageInfo(newRendition, newBook);
+          });
+
+          // 초기 페이지 정보 설정
+          setTimeout(() => {
+            updatePageInfo(newRendition, newBook);
+          }, 1000);
         }
       } catch (error) {
         console.error("EPUB 로딩 오류:", error);
@@ -64,13 +75,37 @@ function App() {
     };
   }, [selectedBookPath, isDarkMode]);
 
-  const updatePageInfo = (renditionInstance) => {
-    if (renditionInstance && book) {
+  // 페이지 정보 업데이트 함수 개선
+  const updatePageInfo = (renditionInstance, bookInstance) => {
+    if (
+      !renditionInstance ||
+      !bookInstance ||
+      !bookInstance.locations ||
+      !bookInstance.locations.total
+    ) {
+      console.log("페이지 정보 업데이트 실패: 필요한 객체가 없음");
+      return;
+    }
+
+    try {
       const currentLocation = renditionInstance.currentLocation();
-      if (currentLocation && currentLocation.displayed) {
-        setCurrentPage(currentLocation.displayed.page);
-        setTotalPages(book.locations.total);
+      if (currentLocation && currentLocation.start) {
+        const currentCfi = currentLocation.start.cfi;
+        const currentPageNumber =
+          bookInstance.locations.locationFromCfi(currentCfi);
+        console.log(
+          "현재 위치:",
+          currentPageNumber,
+          "전체:",
+          bookInstance.locations.total
+        );
+
+        // 1부터 시작하는 페이지 번호로 표시
+        setCurrentPage(currentPageNumber + 1);
+        setTotalPages(bookInstance.locations.total);
       }
+    } catch (error) {
+      console.error("페이지 정보 계산 오류:", error);
     }
   };
 
@@ -108,6 +143,9 @@ function App() {
   };
 
   const handleBookSelect = (path) => {
+    // 새 책을 선택할 때 페이지 정보 초기화
+    setCurrentPage(0);
+    setTotalPages(0);
     setSelectedBookPath(path);
   };
 
@@ -171,10 +209,16 @@ function App() {
           {isDarkMode ? "라이트 모드" : "다크 모드"}
         </button>
         <button onClick={toggleFullscreen}>전체 화면</button>
-        <p className="page-info">
-          {currentPage !== null ? currentPage : "-"} /{" "}
-          {totalPages !== null ? totalPages : "-"}
-        </p>
+
+        <div className="page-info">
+          {totalPages > 0 ? (
+            <span>
+              {currentPage} / {totalPages} 페이지
+            </span>
+          ) : (
+            <span>페이지 정보 로딩 중...</span>
+          )}
+        </div>
       </div>
     </div>
   );
