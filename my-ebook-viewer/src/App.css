@@ -88,3 +88,20 @@
   padding: 10px 20px;
   cursor: pointer;
 }
+
+.controls {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center; /* 세로 가운데 정렬 추가 */
+}
+
+.controls button {
+  margin: 0 10px;
+  padding: 10px 20px;
+  cursor: pointer;
+}
+
+.page-info {
+  margin-left: 20px; /* 페이지 정보와 버튼 사이 간격 */
+}

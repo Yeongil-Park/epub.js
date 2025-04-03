@@ -7,8 +7,10 @@ function App() {
   const [rendition, setRendition] = useState(null);
   const [selectedBookPath, setSelectedBookPath] = useState(null);
   const viewerRef = useRef(null);
-  const [fontSize, setFontSize] = useState(100); // 글자 크기 상태
-  const [isDarkMode, setIsDarkMode] = useState(false); // 다크 모드 상태
+  const [fontSize, setFontSize] = useState(100);
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [currentPage, setCurrentPage] = useState(null);
+  const [totalPages, setTotalPages] = useState(null);
 
   const availableBooks = [
     { title: "로미오와 줄리엣", path: "/books/romeo.epub" },
@@ -35,8 +37,10 @@ function App() {
           setRendition(newRendition);
           await newRendition.display();
 
-          // 다크 모드 초기 설정
+          updatePageInfo(newRendition);
           applyTheme(newRendition, isDarkMode);
+
+          newRendition.on("rendered", () => updatePageInfo(newRendition));
         }
       } catch (error) {
         console.error("EPUB 로딩 오류:", error);
@@ -53,9 +57,18 @@ function App() {
         newBook.destroy();
       }
     };
-  }, [selectedBookPath, isDarkMode]); // fontSize 제거
+  }, [selectedBookPath, isDarkMode]);
 
-  // 테마 적용 함수
+  const updatePageInfo = (renditionInstance) => {
+    if (renditionInstance && book) {
+      const currentLocation = renditionInstance.currentLocation();
+      if (currentLocation && currentLocation.displayed) {
+        setCurrentPage(currentLocation.displayed.page);
+        setTotalPages(book.locations.total);
+      }
+    }
+  };
+
   const applyTheme = (renditionInstance, darkMode) => {
     if (renditionInstance) {
       if (darkMode) {
@@ -73,7 +86,7 @@ function App() {
           },
         });
       }
-      renditionInstance.themes.fontSize(`${fontSize}%`); // 초기 글자 크기 설정
+      renditionInstance.themes.fontSize(`${fontSize}%`);
     }
   };
 
@@ -96,14 +109,14 @@ function App() {
   const handleFontSizeChange = (value) => {
     setFontSize(value);
     if (rendition) {
-      rendition.themes.fontSize(`${value}%`); // 현재 페이지에서 글자 크기 변경
+      rendition.themes.fontSize(`${value}%`);
     }
   };
 
   const handleDarkModeToggle = () => {
     setIsDarkMode((prevMode) => !prevMode);
     if (rendition) {
-      applyTheme(rendition, !isDarkMode); // 현재 페이지에서 다크 모드 변경
+      applyTheme(rendition, !isDarkMode);
     }
   };
 
@@ -140,22 +153,24 @@ function App() {
         )}
       </div>
 
-      {selectedBookPath && (
-        <div className="controls">
-          <button onClick={prevPage}>이전 페이지</button>
-          <button onClick={nextPage}>다음 페이지</button>
-          <button onClick={() => handleFontSizeChange(fontSize - 10)}>
-            글자 작게
-          </button>
-          <button onClick={() => handleFontSizeChange(fontSize + 10)}>
-            글자 크게
-          </button>
-          <button onClick={handleDarkModeToggle}>
-            {isDarkMode ? "라이트 모드" : "다크 모드"}
-          </button>
-          <button onClick={toggleFullscreen}>전체 화면</button>
-        </div>
-      )}
+      <div className="controls">
+        <button onClick={prevPage}>이전 페이지</button>
+        <button onClick={nextPage}>다음 페이지</button>
+        <button onClick={() => handleFontSizeChange(fontSize - 10)}>
+          글자 작게
+        </button>
+        <button onClick={() => handleFontSizeChange(fontSize + 10)}>
+          글자 크게
+        </button>
+        <button onClick={handleDarkModeToggle}>
+          {isDarkMode ? "라이트 모드" : "다크 모드"}
+        </button>
+        <button onClick={toggleFullscreen}>전체 화면</button>
+        <p className="page-info">
+          {currentPage !== null ? currentPage : "-"} /{" "}
+          {totalPages !== null ? totalPages : "-"}
+        </p>
+      </div>
     </div>
   );
 }
