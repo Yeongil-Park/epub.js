@@ -76,3 +76,15 @@
 .navigation button:hover {
   background-color: #eee;
 }
+
+.controls {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+}
+
+.controls button {
+  margin: 0 10px;
+  padding: 10px 20px;
+  cursor: pointer;
+}

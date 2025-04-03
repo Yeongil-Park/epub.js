@@ -7,6 +7,8 @@ function App() {
   const [rendition, setRendition] = useState(null);
   const [selectedBookPath, setSelectedBookPath] = useState(null);
   const viewerRef = useRef(null);
+  const [fontSize, setFontSize] = useState(100); // 글자 크기 상태
+  const [isDarkMode, setIsDarkMode] = useState(false); // 다크 모드 상태
 
   const availableBooks = [
     { title: "로미오와 줄리엣", path: "/books/romeo.epub" },
@@ -32,10 +34,12 @@ function App() {
           });
           setRendition(newRendition);
           await newRendition.display();
+
+          // 다크 모드 초기 설정
+          applyTheme(newRendition, isDarkMode);
         }
       } catch (error) {
         console.error("EPUB 로딩 오류:", error);
-        // 오류 처리: 사용자에게 오류 메시지 표시 또는 다른 적절한 조치
       }
     };
 
@@ -49,7 +53,29 @@ function App() {
         newBook.destroy();
       }
     };
-  }, [selectedBookPath]);
+  }, [selectedBookPath, isDarkMode]); // fontSize 제거
+
+  // 테마 적용 함수
+  const applyTheme = (renditionInstance, darkMode) => {
+    if (renditionInstance) {
+      if (darkMode) {
+        renditionInstance.themes.override({
+          body: {
+            "background-color": "#333",
+            color: "#eee",
+          },
+        });
+      } else {
+        renditionInstance.themes.override({
+          body: {
+            "background-color": "white",
+            color: "black",
+          },
+        });
+      }
+      renditionInstance.themes.fontSize(`${fontSize}%`); // 초기 글자 크기 설정
+    }
+  };
 
   const prevPage = () => {
     if (rendition) {
@@ -65,6 +91,28 @@ function App() {
 
   const handleBookSelect = (path) => {
     setSelectedBookPath(path);
+  };
+
+  const handleFontSizeChange = (value) => {
+    setFontSize(value);
+    if (rendition) {
+      rendition.themes.fontSize(`${value}%`); // 현재 페이지에서 글자 크기 변경
+    }
+  };
+
+  const handleDarkModeToggle = () => {
+    setIsDarkMode((prevMode) => !prevMode);
+    if (rendition) {
+      applyTheme(rendition, !isDarkMode); // 현재 페이지에서 다크 모드 변경
+    }
+  };
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen();
+    } else if (document.exitFullscreen) {
+      document.exitFullscreen();
+    }
   };
 
   return (
@@ -93,9 +141,19 @@ function App() {
       </div>
 
       {selectedBookPath && (
-        <div className="navigation">
+        <div className="controls">
           <button onClick={prevPage}>이전 페이지</button>
           <button onClick={nextPage}>다음 페이지</button>
+          <button onClick={() => handleFontSizeChange(fontSize - 10)}>
+            글자 작게
+          </button>
+          <button onClick={() => handleFontSizeChange(fontSize + 10)}>
+            글자 크게
+          </button>
+          <button onClick={handleDarkModeToggle}>
+            {isDarkMode ? "라이트 모드" : "다크 모드"}
+          </button>
+          <button onClick={toggleFullscreen}>전체 화면</button>
         </div>
       )}
     </div>
