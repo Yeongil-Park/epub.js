@@ -8,12 +8,12 @@ function App() {
   const [selectedBookPath, setSelectedBookPath] = useState(null);
   const viewerRef = useRef(null);
   const [fontSize, setFontSize] = useState(100);
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [progress, setProgress] = useState(0);
+  const [currentCfi, setCurrentCfi] = useState(null); // 현재 위치 CFI 저장
 
-  // 페이지 계산을 위한 참조 값 (렌더링에 영향을 주지 않음)
+  // 페이지 계산을 위한 참조 값
   const pageCountRef = useRef(1);
 
   const availableBooks = [
@@ -21,6 +21,7 @@ function App() {
     { title: "모비 딕", path: "/books/moby-dick.epub" },
   ];
 
+  // 책 로딩 효과
   useEffect(() => {
     if (!selectedBookPath) {
       return;
@@ -48,21 +49,30 @@ function App() {
           });
           setRendition(newRendition);
 
-          applyTheme(newRendition, isDarkMode);
-          newRendition.display();
+          // 저장된 위치가 있으면 해당 위치로, 없으면 처음부터 시작
+          if (currentCfi) {
+            newRendition.display(currentCfi);
+          } else {
+            newRendition.display();
+          }
 
-          // 전체 페이지 수 예상 - 실제 콘텐츠 기반으로 계산
-          const estimatedTotalPages = Math.ceil(newBook.locations.total * 1.2); // 약간의 여유를 두고 계산
+          // 전체 페이지 수 예상
+          const estimatedTotalPages = Math.ceil(newBook.locations.total * 1.2);
           setTotalPages(estimatedTotalPages);
 
           // 페이지 이동 이벤트 리스너
           newRendition.on("relocated", (location) => {
-            // relocated 이벤트 발생 시 현재 페이지 정보 업데이트
+            // 현재 CFI 저장
+            if (location && location.start) {
+              setCurrentCfi(location.start.cfi);
+            }
+
+            // 페이지 정보 업데이트
             setCurrentPage(pageCountRef.current);
             updatePageInfo(newRendition, newBook, location);
           });
 
-          // 이전/다음 페이지 이벤트 처리를 위한 커스텀 이벤트 리스너
+          // 키보드 이벤트 리스너
           window.addEventListener("keydown", handleKeyDown);
         }
       } catch (error) {
@@ -81,20 +91,18 @@ function App() {
         newBook.destroy();
       }
     };
-  }, [selectedBookPath, isDarkMode]);
+  }, [selectedBookPath]);
 
-  // 키보드 이벤트 처리 (페이지 이동 감지용)
+  // 키보드 이벤트 처리
   const handleKeyDown = (e) => {
     if (e.key === "ArrowRight") {
-      // 다음 페이지로 이동
       nextPage();
     } else if (e.key === "ArrowLeft") {
-      // 이전 페이지로 이동
       prevPage();
     }
   };
 
-  // 페이지 정보 업데이트 함수 - 진행률은 CFI 기반, 페이지 번호는 순차적으로
+  // 페이지 정보 업데이트 함수
   const updatePageInfo = (renditionInstance, bookInstance, location) => {
     if (
       !renditionInstance ||
@@ -125,42 +133,19 @@ function App() {
     }
   };
 
-  const applyTheme = (renditionInstance, darkMode) => {
-    if (renditionInstance) {
-      if (darkMode) {
-        renditionInstance.themes.override({
-          body: {
-            "background-color": "#333",
-            color: "#eee",
-          },
-        });
-      } else {
-        renditionInstance.themes.override({
-          body: {
-            "background-color": "white",
-            color: "black",
-          },
-        });
-      }
-      renditionInstance.themes.fontSize(`${fontSize}%`);
-    }
-  };
-
-  // 이전 페이지로 이동 - 페이지 카운터도 업데이트
+  // 이전 페이지로 이동
   const prevPage = () => {
     if (rendition) {
       rendition.prev();
-      // 페이지 카운트 업데이트
       pageCountRef.current = Math.max(pageCountRef.current - 1, 1);
       setCurrentPage(pageCountRef.current);
     }
   };
 
-  // 다음 페이지로 이동 - 페이지 카운터도 업데이트
+  // 다음 페이지로 이동
   const nextPage = () => {
     if (rendition) {
       rendition.next();
-      // 페이지 카운트 업데이트
       pageCountRef.current = Math.min(pageCountRef.current + 1, totalPages);
       setCurrentPage(pageCountRef.current);
     }
@@ -170,7 +155,8 @@ function App() {
     setCurrentPage(0);
     setTotalPages(0);
     setProgress(0);
-    pageCountRef.current = 1; // 새 책을 선택하면 페이지 카운트 초기화
+    setCurrentCfi(null); // 새 책을 선택하면 CFI 초기화
+    pageCountRef.current = 1;
     setSelectedBookPath(path);
   };
 
@@ -178,13 +164,6 @@ function App() {
     setFontSize(value);
     if (rendition) {
       rendition.themes.fontSize(`${value}%`);
-    }
-  };
-
-  const handleDarkModeToggle = () => {
-    setIsDarkMode((prevMode) => !prevMode);
-    if (rendition) {
-      applyTheme(rendition, !isDarkMode);
     }
   };
 
@@ -229,9 +208,6 @@ function App() {
         </button>
         <button onClick={() => handleFontSizeChange(fontSize + 10)}>
           글자 크게
-        </button>
-        <button onClick={handleDarkModeToggle}>
-          {isDarkMode ? "라이트 모드" : "다크 모드"}
         </button>
         <button onClick={toggleFullscreen}>전체 화면</button>
 

@@ -139,6 +139,14 @@ h1 {
   color: #666;
 }
 
+/* 키보드 네비게이션 힌트 */
+.keyboard-nav-hint {
+  text-align: center;
+  font-size: 0.8rem;
+  color: #666;
+  margin-top: 15px;
+}
+
 @media (max-width: 768px) {
   .viewer-container {
     height: 400px;
@@ -157,12 +165,4 @@ h1 {
     width: 100%;
     margin: 10px 0;
   }
-}
-
-/* 키보드 네비게이션 힌트 */
-.keyboard-nav-hint {
-  text-align: center;
-  font-size: 0.8rem;
-  color: #666;
-  margin-top: 15px;
 }
