@@ -116,6 +116,7 @@ h1 {
 .page-numbers {
   font-weight: bold;
   margin-bottom: 5px;
+  font-size: 1.1rem;
 }
 
 .progress-bar {
@@ -156,4 +157,12 @@ h1 {
     width: 100%;
     margin: 10px 0;
   }
+}
+
+/* 키보드 네비게이션 힌트 */
+.keyboard-nav-hint {
+  text-align: center;
+  font-size: 0.8rem;
+  color: #666;
+  margin-top: 15px;
 }
